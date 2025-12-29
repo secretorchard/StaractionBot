@@ -28,9 +28,9 @@ def main(ptitle):
     toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6]
 
     # dummy variables for now
-    gnisid = int(rawgnisid)
-    gnisstate = pagetitle[pagetitle.rfind(', ') + 2:]
-    gnistitle = pagetitle[:pagetitle.find(',')]
+    gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
+    gnisstate = pagetitle[pagetitle.rfind(', ') + 2:] # takes state name from page title
+    gnistitle = pagetitle[:pagetitle.find(',')] # takes location name from page title
 
     if (search(gnistitle, gnisstate, gnisid) == False): print(gnisid) # TODO: put misfits in a page in bot userspace
     else:
