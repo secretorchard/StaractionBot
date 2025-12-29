@@ -27,7 +27,6 @@ def main(ptitle):
     # replacement string processing
     toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6]
 
-    # dummy variables for now
     gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
     gnisstate = pagetitle[pagetitle.rfind(', ') + 2:] # takes state name from page title
     gnistitle = pagetitle[:pagetitle.find(',')] # takes location name from page title
@@ -36,9 +35,8 @@ def main(ptitle):
     else:
         # replacement onwiki
         tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
-        editsummary = f'replacing dead citation with {{{{cite gnis}}}}'
+        editsummary = f'replacing dead citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
         page.put(tr, summary=editsummary, minor=False)
-
 
 # boilerplate
 if __name__ == "__main__":
