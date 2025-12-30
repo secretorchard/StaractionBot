@@ -35,7 +35,7 @@ def main(ptitle):
     else:
         # replacement onwiki
         tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
-        editsummary = f'replacing dead citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
+        editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
         page.put(tr, summary=editsummary, minor=False)
 
 # boilerplate
