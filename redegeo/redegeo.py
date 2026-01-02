@@ -15,6 +15,16 @@ def search(title, state, id):
     if (data[0]['GnisId'] == id and data[0]['Name'] == title): return True
     else: return False
 
+def findgnisid(page):
+    # finding gnis id on page
+    rwktxt = page.text
+    try:
+        rawgnisid = rwktxt[rwktxt.rfind(" ", 0, rwktxt.find(f'<ref name="GR3">')) + 1:rwktxt.find(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
+        gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
+        return gnisid
+    except:
+        return False
+
 def main(ptitle):   
     # pwb config 
     site = pwb.Site('en', 'wikipedia') # running on enwiki
@@ -27,14 +37,16 @@ def main(ptitle):
     # replacement string processing
     toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
 
-    gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
+    gnisid = findgnisid(page) # finding gnis id on page
+
     gnisstate = pagetitle[pagetitle.rfind(', ') + 2:] # takes state name from page title
     gnistitle = pagetitle[:pagetitle.find(',')] # takes location name from page title
 
     if (search(gnistitle, gnisstate, gnisid) == False): 
         lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
         ltxt = lpage.text
-        lpage.put(ltxt + "\n* " + "[[" + pagetitle + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1|task 1]])")
+        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + pagetitle + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        else: lpage.put(ltxt + "\n* " + "[[" + pagetitle + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
     else:
         # replacement onwiki
         tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
