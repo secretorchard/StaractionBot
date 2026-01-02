@@ -5,7 +5,7 @@ import urllib.request as rq
 import json
 import us
 
-accessdate = datetime.now(timezone.utc).strftime("%B %d, %Y") # timestamp
+accessdate = datetime.now(timezone.utc).strftime("%Y-%m-%d") # timestamp
 
 def search(title, state, id):
     stateabbr = us.states.lookup(state).abbr.lower() # convert state name to abbreviation
@@ -25,13 +25,16 @@ def main(ptitle):
     rawgnisid = rwktxt[rwktxt.rfind(" ", 0, rwktxt.find(f'<ref name="GR3">')) + 1:rwktxt.find(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
 
     # replacement string processing
-    toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6]
+    toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
 
     gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
     gnisstate = pagetitle[pagetitle.rfind(', ') + 2:] # takes state name from page title
     gnistitle = pagetitle[:pagetitle.find(',')] # takes location name from page title
 
-    if (search(gnistitle, gnisstate, gnisid) == False): print(gnisid) # TODO: put misfits in a page in bot userspace
+    if (search(gnistitle, gnisstate, gnisid) == False): 
+        lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+        ltxt = lpage.text
+        lpage.put(ltxt + "\n* " + "[[" + pagetitle + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1|task 1]])")
     else:
         # replacement onwiki
         tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
