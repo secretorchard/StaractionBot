@@ -8,20 +8,37 @@ import us
 accessdate = datetime.now(timezone.utc).strftime("%Y-%m-%d") # timestamp
 
 def search(title, state, id):
-    stateabbr = us.states.lookup(state).abbr.lower() # convert state name to abbreviation
+    stateabbr = us.states.lookup(state).abbr.lower() # convert state name to abbreviation 
     filteredtitle = title.replace(" ", "_")
     with rq.urlopen(f'https://dashboard.waterdata.usgs.gov/service/geocoder/get/location/1.0?term={filteredtitle}&include=gnis,state&states={stateabbr}') as url:
         data = json.loads(url.read().decode())
-    if (data[0]['GnisId'] == id and data[0]['Name'] == title): return True
-    else: return False
+    for datum in data:
+        if len(data) == 1:
+            if (int(datum['GnisId']) == int(id)) and (str(datum['Name']) == str(title)): return True
+        elif datum['Type'] == "Cities & Populated Places":
+            if (int(datum['GnisId']) == int(id)) and (str(datum['Name']) == str(title)): return True
+    return False
 
+# finding gnis id on page
 def findgnisid(page):
-    # finding gnis id on page
-    rwktxt = page.text
     try:
-        rawgnisid = rwktxt[rwktxt.rfind(" ", 0, rwktxt.find(f'<ref name="GR3">')) + 1:rwktxt.find(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
-        gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
-        return gnisid
+        try:
+            # wikidata config (preferred)
+            wikidataitem = pwb.ItemPage.fromPage(page)
+            item_dict = wikidataitem.get()
+            claims = item_dict["claims"]
+            if len(claims["P590"]) == 1: 
+                gnisid = claim.getTarget()
+            else: 
+                for claim in claims["P590"]:
+                    if claim.has_qualifier("P2868", "Q486972"): gnisid = claim.getTarget()
+            return gnisid
+        except:
+            # wikipedia page config (backup)
+            rwktxt = page.text
+            rawgnisid = rwktxt[rwktxt.rfind(" ", 0, rwktxt.find(f'<ref name="GR3">')) + 1:rwktxt.find(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
+            gnisid = int(rawgnisid) # gnis id, as on the Wikipedia page
+            return gnisid
     except:
         return False
 
@@ -36,10 +53,15 @@ def main(ptitle):
     # replacement string processing
     toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
 
-    gnisid = findgnisid(page) # finding gnis id on page
+    gnisid = findgnisid(page)
 
-    gnisstate = pagetitle[pagetitle.rfind(', ') + 2:] # takes state name from page title
-    gnistitle = pagetitle[:pagetitle.find(',')] # takes location name from page title
+    try:
+        wikidataitem = pwb.ItemPage.fromPage(page)
+        gnistitle = wikidataitem.labels['en'].strip() # takes location name from Wikidata item (preferred)
+        gnisstate = ptitle[ptitle.rfind(', ') + 2:].strip() # takes state name from page title (backup)
+    except:
+        gnisstate = ptitle[ptitle.rfind(', ') + 2:].strip() # takes state name from page title (backup)
+        gnistitle = ptitle[:ptitle.find(',')].strip() # takes location name from page title (backup)
 
     if (search(gnistitle, gnisstate, gnisid) == False): 
         lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
