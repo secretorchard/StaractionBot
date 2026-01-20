@@ -79,8 +79,8 @@ def main(ptitle):
     if (search(gnistitle, gnisstate, gnisid) == False): 
         lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
         ltxt = lpage.text
-        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-        else: lpage.put(ltxt + "\n* " + "[[" + ptitle + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
     else:
         # replacement onwiki
         tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
