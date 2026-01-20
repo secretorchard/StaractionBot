@@ -43,7 +43,7 @@ def findgnisid(page):
         except:
             # wikipedia page config (backup)
             rwktxt = page.text
-            gnisid = rwktxt[rwktxt.rfind(" ", 0, rwktxt.find(f'<ref name="GR3">')) + 1:rwktxt.find(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
+            gnisid = rwktxt[rwktxt.rindex(" ", 0, rwktxt.index(f'<ref name="GR3">')) + 1:rwktxt.index(f'<ref name="GR3">')] # splice out the part right after a space and before the <ref> tag
             return str(gnisid)
     except:
         return False
@@ -55,9 +55,6 @@ def main(ptitle):
 
     # finding gnis id on page
     rwktxt = page.text
-
-    # replacement string processing
-    toreplace = rwktxt[rwktxt.find(f'<ref name="GR3">'):rwktxt.find("</ref>", rwktxt.find(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
 
     gnisid = findgnisid(page)
 
@@ -76,16 +73,26 @@ def main(ptitle):
     if "Township" in gnistitle:
         gnistitle = "Township of " + gnistitle[:gnistitle.find('Township')].strip()
 
-    if (search(gnistitle, gnisstate, gnisid) == False): 
+    # replacement string processing
+    try:
+        toreplace = rwktxt[rwktxt.index(f'<ref name="GR3">'):rwktxt.index("</ref>", rwktxt.index(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
+        if (search(gnistitle, gnisstate, gnisid) == False): 
+            # failure logging
+            lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+            ltxt = lpage.text
+            if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+            else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        else:
+            # replacement onwiki
+            tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
+            editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
+            page.put(tr, summary=editsummary, minor=False)
+    except:
+        # failure logging. [[special:diff/1333926223]] needs to never happen again
         lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
         ltxt = lpage.text
-        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "no GR3 tag / failed to find ID", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
         else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-    else:
-        # replacement onwiki
-        tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
-        editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
-        page.put(tr, summary=editsummary, minor=False)
 
 # boilerplate
 if __name__ == "__main__":
