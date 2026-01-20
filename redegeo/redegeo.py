@@ -76,17 +76,25 @@ def main(ptitle):
     # replacement string processing
     try:
         toreplace = rwktxt[rwktxt.index(f'<ref name="GR3">'):rwktxt.index("</ref>", rwktxt.index(f'<ref name="GR3">')) + 6] # TODO: replace the +6 with detection of digits instead
-        if (search(gnistitle, gnisstate, gnisid) == False): 
+        if ("geonames.usgs.gov" in toreplace):
+            if (search(gnistitle, gnisstate, gnisid) == False): 
+                # failure logging
+                lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+                ltxt = lpage.text
+                if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+                else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+            else:
+                # replacement onwiki
+                tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>').replace(f'<ref name="GR3" />', f'<ref name="GR3-u" />')
+                editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
+                page.put(tr, summary=editsummary, minor=False)
+        else:
             # failure logging
             lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
             ltxt = lpage.text
             if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
             else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-        else:
-            # replacement onwiki
-            tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>')
-            editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
-            page.put(tr, summary=editsummary, minor=False)
+
     except:
         # failure logging. [[special:diff/1333926223]] needs to never happen again
         lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
