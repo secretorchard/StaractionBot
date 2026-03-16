@@ -20,8 +20,7 @@ def search(title, state, id):
         with rq.urlopen(f'https://dashboard.waterdata.usgs.gov/service/geocoder/get/location/1.0?term={filteredtitle}&include=gnis') as url:
             data = json.loads(url.read().decode())
     for datum in data:
-        if len(data) == 1:
-            if (str(datum['GnisId']) == id) and (str(datum['Name']) == str(title)): return True # issue with leading zeros in ints
+        if (str(datum['GnisId']) == id) and (str(datum['Name']) == str(title)): return True
         elif str(datum['Type']) == "Cities & Populated Places":
             if (str(datum['GnisId']) == id) and (str(datum['Name']) == str(title)): return True
     return False
