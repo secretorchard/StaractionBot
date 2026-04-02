@@ -49,6 +49,7 @@ def findgnisid(page):
 
 def main(ptitle):   
     # pwb config 
+    site = pwb.Site('en', 'wikipedia') # running on enwiki
     page = pwb.Page(site, pagetitle) # page to run on
 
     # finding gnis id on page
@@ -77,41 +78,31 @@ def main(ptitle):
         if ("geonames.usgs.gov" in toreplace):
             if (search(gnistitle, gnisstate, gnisid) == False): 
                 # failure logging
-                if (gnisid == False): 
-                    ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get"
-                    lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-                else: 
-                    ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid)
-                    lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+                lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+                ltxt = lpage.text
+                if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+                else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
             else:
                 # replacement onwiki
                 tr = page.text.replace(toreplace, f'<ref name="GR3-u">{{{{cite gnis|{gnisid}|{gnistitle}|{accessdate}}}}}</ref>').replace(f'<ref name="GR3" />', f'<ref name="GR3-u" />')
                 editsummary = f'replacing generic citation with {{{{cite gnis}}}} ([[User:StaractionBot/Tasks/1|task 1]])'
                 page.put(tr, summary=editsummary, minor=False)
         else:
-             # failure logging
-            if (gnisid == False): 
-                ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get"
-                lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-            else: 
-                ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid)
-                lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+            # failure logging
+            lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+            ltxt = lpage.text
+            if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = failed to get", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+            else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
 
     except:
         # failure logging. [[special:diff/1333926223]] needs to never happen again
-        if (gnisid == False): 
-            ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "no GR3 tag / failed to find ID"
-            lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
-        else: 
-            ltxt = ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid)
-            lpage.put(ltxt, summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
+        ltxt = lpage.text
+        if (gnisid == False): lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "no GR3 tag / failed to find ID", summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
+        else: lpage.put(ltxt + "\n* " + "[[" + ptitle.strip() + "]]" +  ", " + "given ID = " + str(gnisid), summary = "logging failed citation replacement on " + "[[" + pagetitle + "]] ([[User:StaractionBot/Tasks/1.1|task 1.1]])")
 
 # boilerplate
 if __name__ == "__main__":
-    site = pwb.Site('en', 'wikipedia') # running on enwiki
-    lpage = pwb.Page(site, 'User:StaractionBot/Tasks/1/logged')
-    ltxt = lpage.text
-
     with open('toreplace.txt') as file: 
         for pagetitle in file: 
             print(pagetitle)
