@@ -117,7 +117,7 @@ for line in reversed(lines):
                         flag = 19
 
                 except InvalidTitleError:
-                    print("InvalidTitleError on talk page of " + page.title())
+                    print("InvalidTitleError on talk page of " + p.title())
 
             else: 
                 # skip, as non-ARBPIA
