@@ -1,6 +1,7 @@
 # library config
 import pywikibot as pwb
 import urllib.request as rq
+import mwparserfromhell
 from pywikibot.exceptions import InvalidTitleError
 
 # pwb config
@@ -21,12 +22,24 @@ def log(toLog, s):
 whitelist = pwb.Page(site, "User:StaractionBot/Tasks/3.1/whitelist") # whitelist page
 whitelistLines = whitelist.text.splitlines()
 
+# trial counter
+counter = 0
+
 for line in reversed(lines): 
+    if (counter >= 47):
+        print("hit 50 edits!")
+        break
+
     if (("{User:ClerkBot/AE entry" in line) and ("[edit=extendedconfirmed] (indefinite)" in line)):
         # find page
         textstart = line.index("|page=") # start of page text
         textend = line.index("|date=") # end of page text
         articleTitle = line[textstart + 6:textend] # article title
+
+        # find log entry
+        logstart = line.index("|logid=") # start of logid
+        logend = line.index("|admin=") # end of logid
+        logEntry = line[logstart + 7:logend] # log entry
 
         # editnotice page
         oldTemplateNoticePage = pwb.Page(site, "Template:Editnotices/Page/" + articleTitle) # editnotice template page
@@ -70,7 +83,9 @@ for line in reversed(lines):
                                 
                                 else:
                                     # create editnotice
-                                    print("Would create editnotice for " + p.title())
+                                    print("Adding editnotice to page " + articleTitle)
+                                    templateNoticePage.put("{{Contentious topics/editnotice|topic=a-i}}", summary = "Creating [[WP:CT/PIA]] editnotice per [[Special:Redirect/logid/" + logEntry + "|page protection]] ([[User:StaractionBot/Tasks/3.1|task 3.1]])") 
+                                    counter = counter + 1
 
                             else:
                                 # log, as non-protected but in protection log (perhaps expiring?)
@@ -103,21 +118,52 @@ for line in reversed(lines):
                     flag = 10
 
                 # talk page notices
-                try:
 
-                    if (talkCat not in talkPage.categories() and talkCatBroad not in talkPage.categories()):
+                if (talkCat not in talkPage.categories() and talkCatBroad not in talkPage.categories()):
 
-                        # detecting whether the page is still protected & want only mainspace pages, and pages that currently exist
-                        if (p.protection().get("edit") == ("extendedconfirmed", "infinity") and p.exists() != 0 and p.namespace() == 0 and p.isDisambig() != 1): 
-                            # add talk template to talk page
-                            print("Would add talk template to " + talkPage.title())
+                    # detecting whether the page is still protected & want only mainspace pages, and pages that currently exist
+                    if (p.protection().get("edit") == ("extendedconfirmed", "infinity") and p.exists() != 0 and p.namespace() == 0 and p.isDisambig() != 1): 
+                        # add talk template to talk page, spaghetti code follows
+                        print("Adding talk notice to " + talkPage.title())
+                        wikicode = mwparserfromhell.parse(talkPage.text)
+                        sections = wikicode.get_sections(include_lead=True)
+                        header = sections[0]
+                        wikicode_headersonly = mwparserfromhell.parse(header)
+                        importantFlag = 0
 
-                    else:
-                        # skip, as already has talk page template
-                        flag = 19
+                        for template in reversed(wikicode_headersonly.filter_templates()):
+                            template_name = str(template.name).strip()
+                            template_page = pwb.Page(site, "Template:" + template_name)
 
-                except InvalidTitleError:
-                    print("InvalidTitleError on talk page of " + p.title())
+                            if template_page.isRedirectPage():
+                                template_name = template_page.getRedirectTarget().title(with_ns=0)
+
+                            if (template_name.lower() == "talk header"): # talk header then skip then nom
+                                wikicode.insert_after(template, "\n{{contentious topics/talk notice|topic=a-i}}")
+                                talkPage.put(wikicode, summary = "Adding [[WP:CT/PIA]] talk notice per [[Special:Redirect/logid/" + logEntry + "|page protection]] ([[User:StaractionBot/Tasks/3.1|task 3.1]])")
+                                importantFlag = 1
+                                break
+                            elif (template_name.lower() == "skip to talk") or (template_name.lower() == "top of page") or (template_name.lower() == "skip to section") or (template_name.lower() == "back to contents") or (template_name.lower() == "skip to top") or (template_name.lower() == "skip to bottom"):
+                                wikicode.insert_after(template, "\n{{contentious topics/talk notice|topic=a-i}}")
+                                talkPage.put(wikicode, summary = "Adding [[WP:CT/PIA]] talk notice per [[Special:Redirect/logid/" + logEntry + "|page protection]] ([[User:StaractionBot/Tasks/3.1|task 3.1]])")
+                                importantFlag = 2
+                                break
+                            elif (template_name.lower() == "ga nominee") or (template_name.lower() == "peer review") or (template_name.lower() == "featured article candidates") or (template_name.lower() == "featured list candidates"):
+                                wikicode.insert_after(template, "\n{{contentious topics/talk notice|topic=a-i}}")
+                                talkPage.put(wikicode, summary = "Adding [[WP:CT/PIA]] talk notice per [[Special:Redirect/logid/" + logEntry + "|page protection]] ([[User:StaractionBot/Tasks/3.1|task 3.1]])")  
+                                importantFlag = 3
+                                break
+                            else:
+                                importantFlag = 0
+
+                        if (importantFlag == 0):
+                            talkPage.put("{{contentious topics/talk notice|topic=a-i}}\n" + talkPage.text, summary = "Adding [[WP:CT/PIA]] talk notice per [[Special:Redirect/logid/" + logEntry + "|page protection]] ([[User:StaractionBot/Tasks/3.1|task 3.1]])")
+
+                        counter = counter + 1
+
+                else:
+                    # skip, as already has talk page template
+                    flag = 19
 
             else: 
                 # skip, as non-ARBPIA
